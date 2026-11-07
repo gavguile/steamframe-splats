@@ -83,6 +83,35 @@ Where a reviewer made a local-file claim that this run did not re-check, the tex
 - Visual check (author report): one bar per eye, moving smoothly. No tearing was reported. The counter readback shows our writes land before release. It does not show what the compositor displays.
 - Pattern generation was excluded from these timings. It runs in the real frame loop and needs its own line in the S8 budget.
 
+**S5 result (offline gsplat render, no headset): the budget is missed. Author decision needed.**
+- Setup: gsplat 1.5.3 on torch 2.15 (CUDA 13.2 runtime), RTX 3070 Ti. Scene: Tanks and Temples train, LOD 5, 534,812 Gaussians, SH degree 3. The loader reads the INRIA layout (checked by a synthetic round trip and by a channel-major SH test). Tests (5) pass: DC color round trip, +x is image right, +y is image down.
+- Reference: the scene's own training photos, rendered from their COLMAP poses (the same world frame and convention as the renderer). Control: the same render mirrored left-right.
+  - Full scene, training views 00002 / 00004 / 00006: 25.7 / 24.4 / 23.2 dB. Held-out view 00009: 22.9 dB. Mirrored control: about 9 dB. The bar is 20 dB, my choice, not a published standard.
+  - LOD4 (224,078): held-out 19.0 dB, fails the bar. LOD3 (131,944): 12.3 dB. LOD2 (27,052): 9.2 dB. Unusable.
+- Timing, stereo frame (both eyes), 30 to 50 iterations after warmup:
+
+| Render per eye | Gaussians | Stereo ms, mean (p95) | Peak VRAM |
+| --- | --- | --- | --- |
+| 2644 | 534,812 | 26.1 (27.2) | 628 MiB |
+| 2160 | 534,812 | 19.8 (26.5) | 493 MiB |
+| 1322 | 534,812 | 13.2 (20.0) | 336 MiB |
+| 2644 | 224,078 (LOD4) | 20.3 (21.9) | 465 MiB |
+| 2644 | 131,944 (LOD3) | 18.2 (19.7) | 405 MiB |
+| 2644 | 27,052 (LOD2) | 11.6 (13.2) | 335 MiB |
+
+- Budget: 11.1 ms per frame at 90 Hz for both eyes, plus everything else. The full scene at 2160 is 19.8 ms, about 1.8 times the budget. No measured setting reaches 11.1 ms at a useful quality.
+- Levers tried:
+  - Render size: 1322 per eye is still 13.2 ms.
+  - SH degree 0 instead of 3: 13.0 ms against 13.6 ms per eye at 2644. Negligible.
+  - LOD: quality falls off before the timing gets near the budget.
+  - Batching both eyes in one gsplat call, packed and unpacked: 19.1 to 19.3 ms at 2160. No gain.
+- Caveats: scene scale is not metric. SteamVR was running during the timings, and its compositor may share the GPU. The p95 spikes at 2160 and 2644 suggest that. Not separated.
+- Decision for the author (the brief's stop rule): the stop rule is "if S4 and S5 cannot meet the budget at 2160 per eye with a scene the author accepts, write up the measurements and stop before S7." Options:
+  1. Stop here and write up the measurements.
+  2. Accept a lower app frame rate, about 50 Hz at 2160. Test whether SteamVR's reprojection makes it acceptable in the headset. The reprojection behavior for this stream is unverified.
+  3. Investigate a faster renderer: profile gsplat, or write a renderer that suits this scene. Large effort. Not started.
+- Fixed reference data: `scripts/fetch_reference.sh` pins the COLMAP files, four training photos, and the LOD levels by SHA-256. The LOD files and the photos are under `data/`, which is gitignored.
+
 ## Overview
 
 ### What is wrong, missing, or risky (read first)

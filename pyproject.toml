@@ -5,7 +5,8 @@ description = "Pipecleaner: view a Gaussian splat scene on a Valve Steam Frame t
 readme = "README.md"
 license = "Apache-2.0"
 requires-python = ">=3.14"
-# Exact pins: these are the versions the S3 test pattern ran against.
+# S3 stack pinned exactly (the versions the test pattern ran against). The S4 and
+# S5 additions use lower bounds. uv.lock pins every dependency that is installed.
 dependencies = [
     "pyopenxr==1.1.6501",
     "PyOpenGL==3.1.10",
@@ -13,8 +14,16 @@ dependencies = [
     "numpy==2.5.4",
     "torch>=2.15.0",
     "cuda-python==13.4.4",
+    "gsplat>=1.5.3",
+    "pillow>=13.0.0",
 ]
 
 [tool.uv]
 # An application, not an installable package: run it with `uv run`.
 package = false
+
+[dependency-groups]
+dev = [
+    "pycolmap>=4.2.1",
+    "pytest>=9.2.0",
+]
