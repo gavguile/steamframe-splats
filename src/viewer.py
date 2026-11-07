@@ -194,7 +194,8 @@ class Viewer(TestPattern):
 def main(argv=None):
     p = argparse.ArgumentParser(description="View the train scene in the Steam Frame (gsplat).")
     p.add_argument("--seconds", type=float, default=180.0)
-    p.add_argument("--size", type=int, default=2160, help="render size per eye")
+    p.add_argument("--size", type=int, default=1322,
+                   help="render size per eye (default 1322, half the recommended 2644: about 13 ms per stereo frame)")
     p.add_argument("--start-view", default="00002.jpg", help="training photo whose pose is the start pose")
     p.add_argument("--snapshot-every", type=float, default=0.0, help="seconds between left-eye snapshots (0 = off)")
     p.add_argument("--log-interval", type=float, default=2.0)

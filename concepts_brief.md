@@ -399,6 +399,11 @@ The "stated reason" column gives the concept's own reasons, with a technical res
 **S9 result (repo): passed, except the headset part.** A fresh clone of the public repo at `3e08ed9` installed with `uv sync`. `scripts/fetch_scene.sh` and `scripts/fetch_reference.sh` downloaded and verified every file by SHA-256; this was the first run of their download path. All 25 tests passed, including the first gsplat kernel build. The reference check reproduced 24.43 dB (training views) and 22.93 dB (held-out view). The headset part of the exit (reproducing S7 from the clone) was not run, because it needs the author in the headset. The clone runs the same code that S7 and S8 ran in the headset.
 
 **Open after version 1:**
-- Which controller profile SteamVR selects now that the Frame extension is enabled (check the `controller profile in use` log line on the next run).
-- Frame rate: about 30 frames per second. Options: render below 2160 per eye, or cut splat count with a better-pruned scene.
+- Frame rate beyond 45 per second: resolution alone cannot get there (see below). The remaining levers are the per-frame overhead in viewer.py, foveated rendering, or a cleaner scene.
 - Scene quality and license: a better-captured scene would help more than any renderer change. The upstream Tanks and Temples terms are still unchecked.
+
+**Render size lowered (author decision): 1322 x 1322 per eye is the new default.**
+- Profile per eye at 2160, full scene (GPU time): projection 0.1 ms, colours 0.4, tile sort 2.3, pixel drawing 5.8, total 8.7. There are 5.2 million splat-tile pairs. Pixels and tile coverage dominate, not splat count. The 27k-splat LOD still makes 1.8 million pairs, because its splats are large.
+- Stereo render and conversion offline: 19.8 ms at 2160, 14.6 at 1600, 12.8 at 1322, 11.5 at 1080, 11.5 at 900. Below 1322 the fixed costs dominate.
+- Headset run at 1322: 90 frames per 2 s, so 45 frames per second (up from 30). Stereo render and write took 12 to 15 ms. The image is softer. `--size 2160` restores the old setting.
+- Controller profile check, now closed: with the Frame extension enabled, SteamVR selects `/interaction_profiles/valve/frame_controller` on both hands.

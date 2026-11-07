@@ -4,7 +4,7 @@ A pipecleaner project: look at a standard trained Gaussian splat scene in a Valv
 
 ## Status
 
-Working pipecleaner. The train scene renders with gsplat on this PC, streams through SteamVR to the Steam Frame, and you can fly through it with the controllers. It runs at about 30 frames per second on an RTX 3070 Ti at 2160 x 2160 per eye. The scene is sharp on the train and coarse elsewhere, which is how it was trained.
+Working pipecleaner. The train scene renders with gsplat on this PC, streams through SteamVR to the Steam Frame, and you can fly through it with the controllers. It renders at 1322 x 1322 per eye by default on an RTX 3070 Ti (see the brief for frame rates). The scene is sharp on the train and coarse elsewhere, which is how it was trained.
 
 ## Scope (version 1)
 
@@ -36,7 +36,7 @@ Controls:
 | Either grip (hold) | 3x speed |
 | A (right controller) | Back to the start position |
 
-Options: `--size` (render size per eye, default 2160), `--near-m` (hide splats closer than this, default 0.75 m), `--snapshot-every N` (save the left-eye frame to `data/snapshots/`).
+Options: `--size` (render size per eye, default 1322; 2160 is sharper but runs at about 30 frames per second), `--near-m` (hide splats closer than this, default 0.75 m), `--snapshot-every N` (save the left-eye frame to `data/snapshots/`).
 
 You start where one of the training photos was taken, at roughly life size. The scale is estimated from the camera height (2.2 m per scene unit), not measured.
 
