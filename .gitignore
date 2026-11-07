@@ -1,0 +1,15 @@
+# Scene data: downloaded by a script, never committed
+data/
+*.ply
+*.npz
+*.splat
+*.ksplat
+*.spz
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Local logs and scratch
+*.log
