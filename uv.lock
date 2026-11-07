@@ -725,6 +725,7 @@ dependencies = [
     { name = "gsplat" },
     { name = "numpy" },
     { name = "pillow" },
+    { name = "pycolmap" },
     { name = "pyopengl" },
     { name = "pyopenxr" },
     { name = "torch" },
@@ -732,7 +733,6 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "pycolmap" },
     { name = "pytest" },
 ]
 
@@ -743,16 +743,14 @@ requires-dist = [
     { name = "gsplat", specifier = ">=1.5.3" },
     { name = "numpy", specifier = "==2.5.4" },
     { name = "pillow", specifier = ">=13.0.0" },
+    { name = "pycolmap", specifier = ">=4.2.1" },
     { name = "pyopengl", specifier = "==3.1.10" },
     { name = "pyopenxr", specifier = "==1.1.6501" },
     { name = "torch", specifier = ">=2.15.0" },
 ]
 
 [package.metadata.requires-dev]
-dev = [
-    { name = "pycolmap", specifier = ">=4.2.1" },
-    { name = "pytest", specifier = ">=9.2.0" },
-]
+dev = [{ name = "pytest", specifier = ">=9.2.0" }]
 
 [[package]]
 name = "sympy"
