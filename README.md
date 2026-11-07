@@ -15,6 +15,16 @@ Early. The first hardware test passed: SteamVR's OpenXR sample (`helloxr`) runs 
 
 Out of scope: capturing or editing splats, multiplayer, and on-headset builds.
 
+## Scene data
+
+The scene files are not in this repo. Fetch the train scene with:
+
+```sh
+scripts/fetch_scene.sh
+```
+
+It downloads one pinned file into `data/` and checks its size and SHA-256. The source repo declares no license, and the scene comes from Tanks and Temples. Check those terms before any public use.
+
 ## Planning
 
 [`concepts_brief.md`](concepts_brief.md) holds the planning brief: the risks, the staged plan, and the decisions taken so far.

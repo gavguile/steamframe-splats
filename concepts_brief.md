@@ -53,6 +53,14 @@ Where a reviewer made a local-file claim that this run did not re-check, the tex
 
 **D2 (graphics binding), revised.** Vulkan2 works end to end in `helloxr`. OpenGL is untested. The frame-transport choice (interop or copy) stays open until S4.
 
+**S0 results (desk work, no installs of the project's stack).**
+- **D5 (scene): decided.** Tanks and Temples "train", LOD 5 (full detail). Source: Hugging Face model repo `laphisboy/3DGS-FLoD_pretrained_models`, revision `5fb96747023120cff1dcbdf21c2ae6f2ae7b2182`, file `tnt/train/point_cloud/lod_5_iteration_30000/point_cloud.ply`. Verified: 534,812 Gaussians, SH degree 3 (from the training config), standard binary 3DGS PLY (62 floats per Gaussian), 132,634,907 bytes, SHA-256 `507cc39c5bde73766d3173aa7065f53aec3487d20d9748327d58b72a118fa80f`. Stored at `data/tnt-train/` (gitignored). Fetched by `scripts/fetch_scene.sh`.
+- **Scene license: open.** The repo card declares no license. The scene comes from Tanks and Temples, whose terms have not been checked. The repo does not contain the file, so the risk stays with each user who downloads it. Check the upstream terms before any public use.
+- **gsplat:** Apache-2.0 (verified on GitHub). PyPI 1.5.3 ships only a pure-Python wheel and a source tarball, so its CUDA kernels are built on the user's machine. Building needs `nvcc`, which is not installed (verified). The driver reports CUDA 13.4 (verified). Installing the toolkit is a system change that needs the author's sudo.
+- **pyopenxr:** Apache-2.0 (the LICENSE file says so, verified; GitHub's license field says "Other"). PyPI 1.1.6501, requires Python 3.10 or later. Wheel tags not checked.
+- **Python (D4, provisional):** PyPI lists torch 2.15.0 with Linux wheels for Python 3.14 (verified from metadata). Whether gsplat and pyopenxr install cleanly on 3.14 is decided by the test install in S3.
+- **Reproducibility:** `scripts/fetch_scene.sh` pins the revision and checks size and SHA-256. It was run against the existing file (verified: accepted). Its download branch has not run yet; the same URL was fetched manually.
+
 ## Overview
 
 ### What is wrong, missing, or risky (read first)
