@@ -80,7 +80,7 @@ Where a reviewer made a local-file claim that this run did not re-check, the tex
 - Budget: 11.1 ms per frame at 90 Hz for both eyes plus everything else. The copy path exceeds it on writes alone. Interop uses about 8%.
 - Correctness: during the headset run, the counter was read back from the texture before release on every frame: 2,286 checks, 0 mismatches. Offline (hidden GLX window, no OpenXR): 600 of 600 writes correct on each path.
 - Not tested: pinned host memory for the copy path. Interop is cheaper by a wide margin and avoids the host round trip, so the choice does not depend on it.
-- Not shown by these checks: tearing, and what SteamVR displays. The counter readback shows our writes land before release. It does not show what the compositor displays. Visual check of the moving bar is still needed.
+- Visual check (author report): one bar per eye, moving smoothly. No tearing was reported. The counter readback shows our writes land before release. It does not show what the compositor displays.
 - Pattern generation was excluded from these timings. It runs in the real frame loop and needs its own line in the S8 budget.
 
 ## Overview
