@@ -395,3 +395,10 @@ The "stated reason" column gives the concept's own reasons, with a technical res
 - Left stick flies where the head looks. Right stick snap-turns 30 degrees and moves up and down. Either grip gives 3x speed (1.5 m/s base). A returns to the start pose (`locomotion.py`, with tests).
 - Controller profile: the Steam Frame profile `/interaction_profiles/valve/frame_controller` is only accepted with the `XR_VALVE_frame_controller_interaction` extension enabled. In the S8 run it was not enabled, and SteamVR served the controllers through `/interaction_profiles/oculus/touch_controller`. The extension is now enabled, and the Frame bindings are accepted (checked). Which profile SteamVR picks with it on has not been checked in the headset yet.
 - Run: 4 minutes, no errors, 42 distinct positions logged, reset used twice.
+
+**S9 result (repo): passed, except the headset part.** A fresh clone of the public repo at `3e08ed9` installed with `uv sync`. `scripts/fetch_scene.sh` and `scripts/fetch_reference.sh` downloaded and verified every file by SHA-256; this was the first run of their download path. All 25 tests passed, including the first gsplat kernel build. The reference check reproduced 24.43 dB (training views) and 22.93 dB (held-out view). The headset part of the exit (reproducing S7 from the clone) was not run, because it needs the author in the headset. The clone runs the same code that S7 and S8 ran in the headset.
+
+**Open after version 1:**
+- Which controller profile SteamVR selects now that the Frame extension is enabled (check the `controller profile in use` log line on the next run).
+- Frame rate: about 30 frames per second. Options: render below 2160 per eye, or cut splat count with a better-pruned scene.
+- Scene quality and license: a better-captured scene would help more than any renderer change. The upstream Tanks and Temples terms are still unchecked.
