@@ -69,6 +69,20 @@ Where a reviewer made a local-file claim that this run did not re-check, the tex
 - Heading responds to head turns in both directions. During large sweeps it ranged from about -101 to +93 degrees. The sign convention is checked by unit tests on known rotations. The run shows the expected sign pattern, but no turn was timed.
 - Known gap: while the session is not visible, the heading holds its last value. Fix before S6.
 
+**S4 result (CUDA-to-swapchain spike): passed. D2 = OpenGL through GLX. D3 = CUDA-GL interop.**
+- Setup: 2644 x 2644 per eye. SteamVR offers only sRGB color formats for GL swapchains (`GL_SRGB8_ALPHA8`); plain `GL_RGBA8` is not offered. The first attempt failed at setup for this reason.
+- Same pattern on both paths: a gradient tinted per eye, a moving bar, and a 24-bit frame counter in the top rows.
+- Interop path: CUDA writes into the GL swapchain texture (register once, then map, device-to-device copy, unmap, sync, `glFinish` before release).
+- Copy path: GPU to CPU (pageable memory), then `glTexSubImage2D`.
+- Write-only timing, 45 s runs under SteamVR with the headset visible:
+  - Interop: 3,753 rendered frames. Per eye, mean 0.44 ms (p95 0.50, max 2.69). Both eyes per frame, mean 0.89 ms (p95 0.97).
+  - Copy: 1,400 rendered frames. Per eye, mean 7.57 ms (p95 8.61, max 13.39). Both eyes per frame, mean 15.13 ms (p95 16.27).
+- Budget: 11.1 ms per frame at 90 Hz for both eyes plus everything else. The copy path exceeds it on writes alone. Interop uses about 8%.
+- Correctness: during the headset run, the counter was read back from the texture before release on every frame: 2,286 checks, 0 mismatches. Offline (hidden GLX window, no OpenXR): 600 of 600 writes correct on each path.
+- Not tested: pinned host memory for the copy path. Interop is cheaper by a wide margin and avoids the host round trip, so the choice does not depend on it.
+- Not shown by these checks: tearing, and what SteamVR displays. The counter readback shows our writes land before release. It does not show what the compositor displays. Visual check of the moving bar is still needed.
+- Pattern generation was excluded from these timings. It runs in the real frame loop and needs its own line in the S8 budget.
+
 ## Overview
 
 ### What is wrong, missing, or risky (read first)
@@ -277,8 +291,8 @@ The "stated reason" column gives the concept's own reasons, with a technical res
 ### Open decisions
 
 - **D1. Go/no-go on existing viewers.** Check the four unassessed candidates before any code. If a viewer works on Linux with SteamVR and has a compatible license, decide before S2 whether this project becomes a learning exercise or stops. Owner: author. Blocks S2.
-- **D2. Graphics binding** (OpenGL or Vulkan). Decided after the `helloxr` run lists what SteamVR offers under Wayland.
-- **D3. Frame transport** (interop first, copy as fallback). Decided by S4 timings.
+- **D2. Graphics binding: decided, OpenGL through GLX** (S3 and S4). Vulkan2 also works in `helloxr`, but nothing in the plan needs it.
+- **D3. Frame transport: decided, CUDA-GL interop** (S4 timings: 0.44 ms per eye against 7.57 ms). The copy path stays only as a comparison.
 - **D4. Python version and venv tooling.** Decided by a test install in S0.
 - **D5. Scene** (repo, file, revision, license, Gaussian count). Decided in S0.
 - **D6. Render scale.** Start at 2160 per eye. Consider 2644 only after the encode-width question is answered.

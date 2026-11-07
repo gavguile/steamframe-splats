@@ -11,6 +11,8 @@ dependencies = [
     "PyOpenGL==3.1.10",
     "glfw==2.11.0",
     "numpy==2.5.4",
+    "torch>=2.15.0",
+    "cuda-python==13.4.4",
 ]
 
 [tool.uv]

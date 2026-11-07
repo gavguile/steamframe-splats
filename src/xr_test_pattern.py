@@ -60,6 +60,8 @@ def identity_pose():
 
 
 class TestPattern:
+    color_formats = COLOR_FORMATS  # subclasses may override
+
     def __init__(self):
         self.instance = None
         self.system_id = None
@@ -148,7 +150,7 @@ class TestPattern:
 
     def create_swapchains(self):
         offered = xr.enumerate_swapchain_formats(self.session)
-        fmt = next((f for f in COLOR_FORMATS if f in offered), None)
+        fmt = next((f for f in self.color_formats if f in offered), None)
         if fmt is None:
             raise RuntimeError(f"no supported color format among offered: {list(offered)}")
         for _ in range(2):
