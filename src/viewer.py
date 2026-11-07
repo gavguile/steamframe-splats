@@ -31,7 +31,7 @@ from OpenGL import GL
 from PIL import Image
 
 from s4_spike import cuda_check
-from s5_offline_render import render
+from xr_render import render_xr
 from scene_frame import load_colmap_frame
 from splat_io import load_gaussians
 from xr_camera import intrinsics_from_fov, pose_to_matrix, viewmat_from_pose
@@ -91,7 +91,7 @@ class Viewer(TestPattern):
                     cudart.cudaGraphicsRegisterFlags.cudaGraphicsRegisterFlagsWriteDiscard))
                 for img in self.images[eye]])
         self.near_units = max(self.near_m / self.frame.metres_per_unit, 0.01)
-        log.info("near plane %.2f m (%.3f units): splats closer to the eye are not drawn", self.near_m, self.near_units)
+        log.info("near cut %.2f m (%.3f units): splats closer to the eye are not drawn; sorted by distance", self.near_m, self.near_units)
         torch.cuda.synchronize()
 
     def eye_camera(self, view):
@@ -132,7 +132,7 @@ class Viewer(TestPattern):
                 t0 = time.perf_counter()
                 for eye in range(2):
                     view_w, k = self.eye_camera(views[eye])
-                    img = render(self.g, view_w, k, n, n, near_plane=self.near_units)
+                    img = render_xr(self.g, view_w, k, n, n, near_distance=self.near_units)
                     if eye == 0 and self.snapshot_every and time.monotonic() >= next_snap:
                         path = SNAPSHOTS / f"left_{time.strftime('%H%M%S')}.png"
                         Image.fromarray((img.clamp(0, 1) * 255).round().to(torch.uint8).cpu().numpy()).save(path)

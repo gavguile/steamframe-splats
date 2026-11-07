@@ -66,3 +66,32 @@ def test_world_plus_y_is_image_down_for_colmap_scenes():
     img = render(one_splat([0.0, 0.6, 0.0], [1, 1, 1]), view, k, 64, 64)
     _, row = weighted_centroid(img)
     assert row > 33.0, row
+
+
+def test_xr_render_depth_sort_matches_gsplat():
+    from xr_render import render_xr
+
+    rng = torch.Generator(device="cuda").manual_seed(0)
+    n = 300
+    colors = torch.randn(n, 16, 3, device="cuda", generator=rng) * 0.3
+    g = Gaussians(
+        means=torch.randn(n, 3, device="cuda", generator=rng) * 0.5,
+        quats=torch.nn.functional.normalize(torch.randn(n, 4, device="cuda", generator=rng), dim=1),
+        scales=torch.rand(n, 3, device="cuda", generator=rng) * 0.1 + 0.01,
+        opacities=torch.rand(n, device="cuda", generator=rng),
+        colors=colors,
+        sh_degree=3,
+    )
+    view, k = camera_at_origin_looking_forward()
+    ref = render(g, view, k, 64, 64)
+    ours = render_xr(g, view, k, 64, 64, sort="depth")
+    assert torch.allclose(ref, ours, atol=1e-5)
+
+
+def test_xr_render_near_distance_hides_close_splat():
+    from xr_render import render_xr
+
+    view, k = camera_at_origin_looking_forward()  # eye at z = -3
+    g = one_splat([0.0, 0.0, -2.5], [1, 1, 1])     # 0.5 from the eye
+    assert render_xr(g, view, k, 64, 64, near_distance=0.4).max() > 0.5
+    assert render_xr(g, view, k, 64, 64, near_distance=0.6).max() == 0
