@@ -51,7 +51,7 @@ Where a reviewer made a local-file claim that this run did not re-check, the tex
 - Controller: a "Right Hand Frame Controller OpenXR Grip" pose action is bound. The interaction profile path is not in the log. Still open for S8.
 - Image and head behavior: the author reports that the sample image displays and works. Head-lock was not measured.
 
-**D2 (graphics binding), revised.** Vulkan2 works end to end in `helloxr`. OpenGL is untested. The frame-transport choice (interop or copy) stays open until S4.
+**D2 (graphics binding), revised.** Vulkan2 works end to end in `helloxr`. OpenGL through GLX also works: the S3 app renders into GL swapchain images at about 90 Hz (log and author report). The frame-transport choice (interop or copy) stays open until S4.
 
 **S0 results (desk work, no installs of the project's stack).**
 - **D5 (scene): decided.** Tanks and Temples "train", LOD 5 (full detail). Source: Hugging Face model repo `laphisboy/3DGS-FLoD_pretrained_models`, revision `5fb96747023120cff1dcbdf21c2ae6f2ae7b2182`, file `tnt/train/point_cloud/lod_5_iteration_30000/point_cloud.ply`. Verified: 534,812 Gaussians, SH degree 3 (from the training config), standard binary 3DGS PLY (62 floats per Gaussian), 132,634,907 bytes, SHA-256 `507cc39c5bde73766d3173aa7065f53aec3487d20d9748327d58b72a118fa80f`. Stored at `data/tnt-train/` (gitignored). Fetched by `scripts/fetch_scene.sh`.
@@ -60,6 +60,14 @@ Where a reviewer made a local-file claim that this run did not re-check, the tex
 - **pyopenxr:** Apache-2.0 (the LICENSE file says so, verified; GitHub's license field says "Other"). PyPI 1.1.6501, requires Python 3.10 or later. Wheel tags not checked.
 - **Python (D4, provisional):** PyPI lists torch 2.15.0 with Linux wheels for Python 3.14 (verified from metadata). Whether gsplat and pyopenxr install cleanly on 3.14 is decided by the test install in S3.
 - **Reproducibility:** `scripts/fetch_scene.sh` pins the revision and checks size and SHA-256. It was run against the existing file (verified: accepted). Its download branch has not run yet; the same URL was fetched manually.
+
+**S3 result (Python test pattern): passed, with the exit amended below.**
+- Stack: `src/xr_test_pattern.py` on pyopenxr 1.1.6501, PyOpenGL, and glfw, through the OpenGL/GLX binding. Dependencies are declared in `pyproject.toml` and locked in `uv.lock`. This replaces the earlier `requirements.txt`.
+- glfw's Wayland build cannot use the X11 platform that GLX needs. The app selects glfw's X11 build before import (`PYGLFW_LIBRARY_VARIANT=x11`).
+- Measured: recommended view 2644 x 2644 per eye. Swapchains use GL_SRGB8_ALPHA8. About 90 frames per second are submitted while the session is visible.
+- Checked by the author: left eye red, right eye blue.
+- Heading responds to head turns in both directions. During large sweeps it ranged from about -101 to +93 degrees. The sign convention is checked by unit tests on known rotations. The run shows the expected sign pattern, but no turn was timed.
+- Known gap: while the session is not visible, the heading holds its last value. Fix before S6.
 
 ## Overview
 
@@ -294,7 +302,7 @@ The "stated reason" column gives the concept's own reasons, with a technical res
 - **S1. Device confirmation** (existing milestone 0). Exit: a SteamVR device-view screenshot showing the Steam Frame profile, the SteamVR build, and the dongle model. The logs already support this (Verified). Record which end of the link the dongle sits on.
 - **S1b. Optional zero-install probe.** Run a WebXR immersive-vr page in the headset browser and in this PC's browser. Exit: a world-locked cube appears in the headset, or the browser's failure is recorded.
 - **S2. Register SteamVR as the OpenXR runtime, after writing the undo.** Run `helloxr` before any Python. Exit: a sample image in the headset with head tracking working. Record the graphics bindings, recommended view size, swapchain formats, and the controller interaction profile string.
-- **S3. Python OpenXR test pattern in a pinned venv.** Exit: each eye shows a different solid color; the colors stay fixed in the room as the head moves; the logged yaw sign matches the head turn. Fallback: the C++ host from the SDK samples.
+- **S3. Python OpenXR test pattern in a pinned venv.** Exit (amended after the first run): each eye shows its own solid color; the runtime reports valid orientation; the logged heading responds to head turns with the expected sign. Head-lock moves to S6, because a solid color fills the view and cannot show whether the scene stays fixed in the room. Fallback: the C++ host from the SDK samples.
 - **S4. CUDA-to-swapchain spike.** CUDA writes a moving pattern with a frame counter and per-eye markers into the swapchain at the runtime size. Time both the interop path and the copy path. Exit: no tearing and no stale frames; milliseconds per frame recorded for both paths. Decide D2 and D3 here.
 - **S5. Offline splat render.** Test the loader on a synthetic PLY with known splats. Render the chosen scene to PNG from a fixed camera. Check for NaN values. Time a stereo frame and log peak VRAM. Exit: the PNG matches a named reference render within a stated tolerance; a timing table exists; the author sets the go/no-go against the budget.
 - **S6. Points preview and axis test in the headset.** Draw Gaussian centers as colored points, with an axis-marker scene. Exit: the scene appears in both eyes with correct orientation and scale against the reference object. This isolates coordinate bugs before gsplat is in the loop.

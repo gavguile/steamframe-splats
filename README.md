@@ -4,7 +4,7 @@ A pipecleaner project: look at a standard trained Gaussian splat scene in a Valv
 
 ## Status
 
-Early. The first hardware test passed: SteamVR's OpenXR sample (`helloxr`) runs on the Steam Frame. The splat viewer is not built yet.
+Early. SteamVR's OpenXR sample (`helloxr`) runs on the Steam Frame. A test app that shows a solid color in each eye also runs on the headset. The splat viewer is not built yet.
 
 ## Scope (version 1)
 
@@ -14,6 +14,17 @@ Early. The first hardware test passed: SteamVR's OpenXR sample (`helloxr`) runs 
 - No code runs on the headset.
 
 Out of scope: capturing or editing splats, multiplayer, and on-headset builds.
+
+## Run the test pattern
+
+Needs SteamVR installed, the Steam Frame active in SteamVR, and [uv](https://docs.astral.sh/uv/).
+
+```sh
+uv sync
+uv run python src/xr_test_pattern.py --seconds 60
+```
+
+Start SteamVR first and wait until the headset shows as active. If the app starts while SteamVR is cold, it fails with `XR_ERROR_RUNTIME_FAILURE`. The app points the OpenXR loader at SteamVR for its own process only, so no system-wide OpenXR setting changes.
 
 ## Scene data
 
