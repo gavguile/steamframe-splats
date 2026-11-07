@@ -55,11 +55,11 @@ def intrinsics(width, height, fov_deg, device="cuda"):
 
 
 @torch.no_grad()
-def render(g, viewmat, k, width, height):
-    """Render one view. Returns (H, W, 3) float tensor on the GPU."""
+def render(g, viewmat, k, width, height, near_plane=0.01):
+    """Render one view. Returns (H, W, 3) float tensor on the GPU. near_plane is in scene units."""
     out, _, _ = rasterization(
         g.means, g.quats, g.scales, g.opacities, g.colors,
-        viewmat[None], k[None], width, height, sh_degree=g.sh_degree)
+        viewmat[None], k[None], width, height, sh_degree=g.sh_degree, near_plane=near_plane)
     return out[0]
 
 

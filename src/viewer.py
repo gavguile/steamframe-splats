@@ -65,8 +65,9 @@ def write_interop(resource, buf, width, height):
 class Viewer(TestPattern):
     color_formats = (GL.GL_SRGB8_ALPHA8,)
 
-    def __init__(self, render_size, start_view, snapshot_every):
+    def __init__(self, render_size, start_view, snapshot_every, near_m):
         super().__init__()
+        self.near_m = near_m
         self.render_size = render_size
         self.start_view = start_view
         self.snapshot_every = snapshot_every
@@ -89,6 +90,8 @@ class Viewer(TestPattern):
                     img.image, GL.GL_TEXTURE_2D,
                     cudart.cudaGraphicsRegisterFlags.cudaGraphicsRegisterFlagsWriteDiscard))
                 for img in self.images[eye]])
+        self.near_units = max(self.near_m / self.frame.metres_per_unit, 0.01)
+        log.info("near plane %.2f m (%.3f units): splats closer to the eye are not drawn", self.near_m, self.near_units)
         torch.cuda.synchronize()
 
     def eye_camera(self, view):
@@ -129,7 +132,7 @@ class Viewer(TestPattern):
                 t0 = time.perf_counter()
                 for eye in range(2):
                     view_w, k = self.eye_camera(views[eye])
-                    img = render(self.g, view_w, k, n, n)
+                    img = render(self.g, view_w, k, n, n, near_plane=self.near_units)
                     if eye == 0 and self.snapshot_every and time.monotonic() >= next_snap:
                         path = SNAPSHOTS / f"left_{time.strftime('%H%M%S')}.png"
                         Image.fromarray((img.clamp(0, 1) * 255).round().to(torch.uint8).cpu().numpy()).save(path)
@@ -171,6 +174,8 @@ def main(argv=None):
     p.add_argument("--start-view", default="00002.jpg", help="training photo whose pose is the start pose")
     p.add_argument("--snapshot-every", type=float, default=0.0, help="seconds between left-eye snapshots (0 = off)")
     p.add_argument("--log-interval", type=float, default=2.0)
+    p.add_argument("--near-m", type=float, default=0.75,
+                   help="hide splats closer than this to the eye, in metres (removes floaters at the start pose)")
     args = p.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", datefmt="%H:%M:%S")
@@ -179,7 +184,7 @@ def main(argv=None):
         raise SystemExit(f"OpenXR runtime manifest not found: {runtime}")
     os.environ["XR_RUNTIME_JSON"] = runtime
 
-    app = Viewer(args.size, args.start_view, args.snapshot_every)
+    app = Viewer(args.size, args.start_view, args.snapshot_every, args.near_m)
     try:
         app.create_instance()
         app.prepare_system()
