@@ -4,7 +4,7 @@ A pipecleaner project: look at a standard trained Gaussian splat scene in a Valv
 
 ## Status
 
-Early. SteamVR's OpenXR sample (`helloxr`) runs on the Steam Frame. A test app that shows a solid color in each eye also runs on the headset. The splat viewer is not built yet.
+Working pipecleaner. The train scene renders with gsplat on this PC, streams through SteamVR to the Steam Frame, and you can fly through it with the controllers. It runs at about 30 frames per second on an RTX 3070 Ti at 2160 x 2160 per eye. The scene is sharp on the train and coarse elsewhere, which is how it was trained.
 
 ## Scope (version 1)
 
@@ -14,6 +14,31 @@ Early. SteamVR's OpenXR sample (`helloxr`) runs on the Steam Frame. A test app t
 - No code runs on the headset.
 
 Out of scope: capturing or editing splats, multiplayer, and on-headset builds.
+
+## Run the viewer
+
+Needs Linux, an NVIDIA GPU with the CUDA toolkit (`nvcc`; gsplat compiles its kernels on first use), SteamVR with the Steam Frame active, and [uv](https://docs.astral.sh/uv/).
+
+```sh
+uv sync
+scripts/fetch_scene.sh        # the trained train scene (133 MB)
+scripts/fetch_reference.sh    # camera poses (used for the start pose) and test photos
+uv run python src/viewer.py --seconds 300
+```
+
+Controls:
+
+| Input | Action |
+| --- | --- |
+| Left stick | Fly where you look (forward/back, sideways) |
+| Right stick left/right | Snap turn 30 degrees |
+| Right stick up/down | Move straight up or down |
+| Either grip (hold) | 3x speed |
+| A (right controller) | Back to the start position |
+
+Options: `--size` (render size per eye, default 2160), `--near-m` (hide splats closer than this, default 0.75 m), `--snapshot-every N` (save the left-eye frame to `data/snapshots/`).
+
+You start where one of the training photos was taken, at roughly life size. The scale is estimated from the camera height (2.2 m per scene unit), not measured.
 
 ## Run the test pattern
 

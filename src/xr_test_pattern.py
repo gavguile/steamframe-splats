@@ -61,6 +61,7 @@ def identity_pose():
 
 class TestPattern:
     color_formats = COLOR_FORMATS  # subclasses may override
+    optional_extensions = ()  # enabled when the runtime offers them
 
     def __init__(self):
         self.instance = None
@@ -90,9 +91,12 @@ class TestPattern:
             engine_version=xr.PYOPENXR_CURRENT_API_VERSION,
             api_version=xr.Version(1, 0, xr.XR_VERSION_PATCH),
         )
+        enabled = [xr.KHR_OPENGL_ENABLE_EXTENSION_NAME]
+        enabled += [e for e in self.optional_extensions if e in extensions]
+        self.enabled_extensions = enabled
         ici = xr.InstanceCreateInfo(
             application_info=app_info,
-            enabled_extension_names=[xr.KHR_OPENGL_ENABLE_EXTENSION_NAME],
+            enabled_extension_names=enabled,
         )
         self.instance = xr.create_instance(ici)
 

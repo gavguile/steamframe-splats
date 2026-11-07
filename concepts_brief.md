@@ -375,3 +375,23 @@ The "stated reason" column gives the concept's own reasons, with a technical res
 - The existence and XR support of the open-source viewers named above.
 - The stream codec, the Wi-Fi band, and the dongle's end of the link.
 - The cause of the headset drops in the logs.
+
+**S5 decision (author):** accept a lower frame rate and continue. Measured later in the headset: about 30 frames per second (see S7).
+
+**S6 result (points and axes preview): replaced by S7 after two bugs were found.**
+- Bug 1, every headset stage since S3: OpenGL swapchain images have their origin at the bottom-left, and all renderers wrote the top row first. The headset showed every frame upside down. The S3 solid colours and the S4 vertical bar look the same either way, so it went unnoticed. In S6 it showed as a scene that sheared and would not stay fixed when the head moved (author report). Fix: rows are flipped on the way into the swapchain (`viewer.to_swapchain_rgba`, with a test). Evidence: the S4 readback found the counter, written to buffer row 0, at GL row 0.
+- Bug 2: the point preview wrote points with an unordered scatter, so which point won a shared pixel was undefined (12,145 pixels differed between two identical draws). Fixed with a depth buffer and a test.
+- Placement: the preview put a shrunken scene 3 m away (author: "very far away"). Replaced by the S7 start pose.
+
+**S7 result (gsplat in the headset): passed (author report and logs).**
+- Start pose: training photo 00002's camera position, facing the same way, horizon level (`scene_frame.py`). Up is the average up of all 301 training cameras. Scale is 2.21 m per scene unit, from an assumed camera height of 1.6 m and a ground height estimated from the sparse points. This is an estimate, not a measurement. Tests cover the composition of the head pose with the scene frame.
+- Author check after the row fix: sky up, scene stays fixed when the head moves.
+- Splats are sorted by distance from the eye instead of view depth (`xr_render.py`, gsplat's pipeline with the sort key swapped). With depth as the key it matches gsplat exactly (test). Rotation consistency, measured as an 8-degree turn warped back over the overlap: 23.0 dB with depth, 27.1 dB with distance, at no speed cost. Author: popping is better.
+- Splats closer than 0.75 m to the eye are not drawn (distance-based). The remaining near-field smear is real but poorly reconstructed geometry: the ground and a locomotive about 2 m to the right of the start pose. A larger cut deletes that locomotive. Culling splats near the training cameras made the ground worse.
+- Frame rate: about 30 frames per second. A stereo frame at 2160 per eye takes 23 to 26 ms including the write, and frame pacing rounds that to every third 90 Hz slot.
+- Scene quality: only the train is sharp. The background is coarse in the trained scene itself (author: "fine for testing").
+
+**S8 result (controller free-fly): passed (author report and logs).**
+- Left stick flies where the head looks. Right stick snap-turns 30 degrees and moves up and down. Either grip gives 3x speed (1.5 m/s base). A returns to the start pose (`locomotion.py`, with tests).
+- Controller profile: the Steam Frame profile `/interaction_profiles/valve/frame_controller` is only accepted with the `XR_VALVE_frame_controller_interaction` extension enabled. In the S8 run it was not enabled, and SteamVR served the controllers through `/interaction_profiles/oculus/touch_controller`. The extension is now enabled, and the Frame bindings are accepted (checked). Which profile SteamVR picks with it on has not been checked in the headset yet.
+- Run: 4 minutes, no errors, 42 distinct positions logged, reset used twice.

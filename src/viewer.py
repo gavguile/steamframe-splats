@@ -32,7 +32,9 @@ from PIL import Image
 
 from s4_spike import cuda_check
 from xr_render import render_xr
+from locomotion import Rig
 from scene_frame import load_colmap_frame
+from xr_input import Controls
 from splat_io import load_gaussians
 from xr_camera import intrinsics_from_fov, pose_to_matrix, viewmat_from_pose
 from xr_test_pattern import ACTIVE_STATES, DEFAULT_RUNTIME, TestPattern
@@ -64,6 +66,8 @@ def write_interop(resource, buf, width, height):
 
 class Viewer(TestPattern):
     color_formats = (GL.GL_SRGB8_ALPHA8,)
+    # The Steam Frame controller profile is only accepted with this extension enabled.
+    optional_extensions = ("XR_VALVE_frame_controller_interaction",)
 
     def __init__(self, render_size, start_view, snapshot_every, near_m):
         super().__init__()
@@ -73,8 +77,11 @@ class Viewer(TestPattern):
         self.snapshot_every = snapshot_every
         self.resources = []
         self.bufs = []
+        self.rig = Rig()
+        self.controls = None
 
     def setup(self):
+        self.controls = Controls(self.instance, self.session)
         self.g = load_gaussians(SCENE, device="cuda")
         self.frame = load_colmap_frame(COLMAP, self.start_view)
         log.info("scene: %d Gaussians | start view %s | %.3f m per unit | camera height %.3f units",
@@ -96,7 +103,8 @@ class Viewer(TestPattern):
 
     def eye_camera(self, view):
         q, p, f = view.pose.orientation, view.pose.position, view.fov
-        view_local = viewmat_from_pose(pose_to_matrix((q.x, q.y, q.z, q.w), (p.x, p.y, p.z)))
+        head = pose_to_matrix((q.x, q.y, q.z, q.w), (p.x, p.y, p.z))
+        view_local = viewmat_from_pose(self.rig.matrix() @ head)  # the rig moves the viewer through the scene
         view_world = self.frame.view_world(view_local)
         k = intrinsics_from_fov(f.angle_left, f.angle_right, f.angle_up, f.angle_down,
                                 self.render_size, self.render_size)
@@ -109,6 +117,7 @@ class Viewer(TestPattern):
         next_log = time.monotonic() + log_interval
         next_snap = time.monotonic() + (self.snapshot_every or 0)
         frames, render_ms = 0, []
+        last_t, profile_logged = time.monotonic(), False
         SNAPSHOTS.mkdir(parents=True, exist_ok=True)
         log.info("running for %.0f s at %d x %d per eye", seconds, n, n)
         while time.monotonic() < deadline and not self.exit_requested:
@@ -129,6 +138,20 @@ class Viewer(TestPattern):
                     self.session,
                     xr.ViewLocateInfo(xr.ViewConfigurationType.PRIMARY_STEREO,
                                       frame_state.predicted_display_time, self.space))
+                now_t = time.monotonic()
+                dt, last_t = min(now_t - last_t, 0.1), now_t
+                inp = self.controls.poll()
+                if inp is not None:
+                    left, right, boost, reset = inp
+                    if reset:
+                        self.rig.reset()
+                        log.info("reset to start pose")
+                    q, p = views[0].pose.orientation, views[0].pose.position
+                    self.rig.update(pose_to_matrix((q.x, q.y, q.z, q.w), (p.x, p.y, p.z)), left, right, boost, dt)
+                    if not profile_logged and now_t >= next_log:
+                        prof = self.controls.current_profile()
+                        log.info("controller profile in use: %s", prof)
+                        profile_logged = "none" not in prof  # the runtime may pick one a moment after focus
                 t0 = time.perf_counter()
                 for eye in range(2):
                     view_w, k = self.eye_camera(views[eye])
@@ -154,8 +177,9 @@ class Viewer(TestPattern):
             now = time.monotonic()
             if now >= next_log:
                 ms = f"{np.mean(render_ms):.1f}" if render_ms else "n/a"
-                log.info("frames %d in %.0f s | stereo render+write ms %s | state %s",
-                         frames, log_interval, ms, self.state.name)
+                log.info("frames %d in %.0f s | stereo render+write ms %s | state %s | rig pos %s yaw %.0f deg",
+                         frames, log_interval, ms, self.state.name, np.round(self.rig.pos, 2),
+                         np.degrees(self.rig.yaw))
                 frames, render_ms = 0, []
                 next_log = now + log_interval
 
